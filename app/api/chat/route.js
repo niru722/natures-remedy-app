@@ -9,10 +9,12 @@ export async function POST(request) {
     const body = await request.json();
     const { messages, system } = body;
 
+    const enhancedSystem = system + "\n\nCRITICAL: Your entire response must be ONLY a valid JSON object. No text before or after. No markdown. No explanation. Start with { and end with }. Nothing else.";
+
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1000,
-      system: system,
+      system: enhancedSystem,
       messages: messages,
     });
 
