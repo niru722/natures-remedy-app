@@ -19,9 +19,30 @@ export async function POST(request) {
     });
 
     const text = response.content.map(i => i.text || "").join("");
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error("No JSON found in response");
-    const parsed = JSON.parse(match[0]);
+    
+    // Try multiple parsing strategies
+    let parsed;
+    try {
+      // Strategy 1: direct parse
+      parsed = JSON.parse(text.trim());
+    } catch {
+      try {
+        // Strategy 2: extract JSON block
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) parsed = JSON.parse(match[0]);
+      } catch {
+        // Strategy 3: clean and parse
+        const cleaned = text
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
+          .trim();
+        const match = cleaned.match(/\{[\s\S]*\}/);
+        if (match) parsed = JSON.parse(match[0]);
+      }
+    }
+
+    if (!parsed) throw new Error("Could not parse response");
 
     return Response.json({ content: [{ text: JSON.stringify(parsed) }] });
   } catch (error) {
