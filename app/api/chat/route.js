@@ -13,30 +13,23 @@ export async function POST(request) {
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 1000,
+      max_tokens: 2000,
       system: enhancedSystem,
       messages: messages,
     });
 
     const text = response.content.map(i => i.text || "").join("");
-    
-    // Try multiple parsing strategies
+    console.log("RAW RESPONSE:", text);
+
     let parsed;
     try {
-      // Strategy 1: direct parse
       parsed = JSON.parse(text.trim());
     } catch {
       try {
-        // Strategy 2: extract JSON block
         const match = text.match(/\{[\s\S]*\}/);
         if (match) parsed = JSON.parse(match[0]);
       } catch {
-        // Strategy 3: clean and parse
-        const cleaned = text
-          .replace(/```json/g, "")
-          .replace(/```/g, "")
-          .replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
-          .trim();
+        const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
         const match = cleaned.match(/\{[\s\S]*\}/);
         if (match) parsed = JSON.parse(match[0]);
       }
